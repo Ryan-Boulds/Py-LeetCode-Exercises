@@ -1,13 +1,15 @@
-a = 2 ** 16 + 3
-b = 0
-m = 2 ** 31
-seed = 2 ** 16 + 3
-x = seed
+class Solution(object):
+    def create_staircase(nums):
+        step = 1
+        subsets = []
+        while len(nums) != 0:
+            if len(nums) >= step:
+                subsets.append(nums[0:step])
+                nums = nums[step:]
+                step += 1
+            else:
+                return False
 
-i = 0
-while i < 20:
-    x = (a * x + b) % m
-    u = (x / m) * 100
-    i += 1
+        return subsets
 
-    print(int(u))
+    print(create_staircase([1, 2, 3,4,5,6]))
