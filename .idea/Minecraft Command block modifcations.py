@@ -4,6 +4,13 @@ import logging
 import keyboard
 import tkinter as tk
 from tkinter import ttk
+import pystray
+from pystray import Menu, MenuItem
+from PIL import Image
+import threading
+import sys
+import os
+import time
 
 # Configure logging to file
 logging.basicConfig(
@@ -17,6 +24,9 @@ class CommandModifierApp:
         self.root = root
         self.root.title("Minecraft Command Modifier")
         self.root.configure(bg='#f0f0f0')
+        self.root.geometry("400x300")  # Smaller initial size
+        self.root.resizable(True, True)  # Allow resizing
+        self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
 
         # Create main frame for notebook and terminal
         self.main_frame = ttk.Frame(root)
@@ -38,6 +48,10 @@ class CommandModifierApp:
         self.change_block_frame = ttk.Frame(self.notebook)
         self.notebook.add(self.change_block_frame, text="Change Block")
 
+        # Settings tab
+        self.settings_frame = ttk.Frame(self.notebook)
+        self.notebook.add(self.settings_frame, text="Settings")
+
         # Initialize modifier variables for Command Modifier
         self.pos_x_offset = tk.StringVar(value="0")
         self.pos_y_offset = tk.StringVar(value="0")
@@ -57,6 +71,10 @@ class CommandModifierApp:
         # Initialize change block variable
         self.block_text = tk.StringVar(value="minecraft:lime_concrete")
 
+        # Settings variables
+        self.always_on_top = tk.BooleanVar(value=False)
+        self.show_in_tray = tk.BooleanVar(value=True)
+
         # Create GUI elements
         self.create_gui()
 
@@ -65,6 +83,14 @@ class CommandModifierApp:
 
         logging.info("Application started (F12 clipboard mode with GUI)")
         self.print_to_text("Application started. Copy a command, press F12 to process.\n")
+
+        # Initialize tray icon after a delay
+        self.tray = None
+        self.tray_thread = None
+        self.schedule_tray_setup()
+
+        # Set initial always on top state
+        self.toggle_always_on_top()
 
     def create_gui(self):
         # Common method to create GUI for both tabs
@@ -157,6 +183,16 @@ class CommandModifierApp:
             self.change_block_frame, textvariable=self.block_text, width=30, bg='#ffffff', font=("Arial", 10)
         ).grid(row=1, column=1, pady=5, sticky="w", padx=10)
 
+        # Create GUI for Settings
+        tk.Checkbutton(
+            self.settings_frame, text="Always Remains on Top", variable=self.always_on_top,
+            command=self.toggle_always_on_top, bg='#f0f0f0', font=("Arial", 10)
+        ).grid(row=0, column=0, pady=5, padx=10, sticky="w")
+        tk.Checkbutton(
+            self.settings_frame, text="Show in Tray Icon when Closed", variable=self.show_in_tray,
+            command=self.update_tray, bg='#f0f0f0', font=("Arial", 10)
+        ).grid(row=1, column=0, pady=5, padx=10, sticky="w")
+
         # Terminal Output (outside notebook)
         tk.Label(
             self.main_frame, text="Terminal Output", font=("Arial", 12, "bold"),
@@ -164,7 +200,7 @@ class CommandModifierApp:
         ).pack(pady=5, fill="x", padx=10)
 
         self.terminal_text = tk.Text(
-            self.main_frame, height=10, font=("Courier", 10), bg='#000000', fg='#ffffff',
+            self.main_frame, height=5, font=("Courier", 10), bg='#000000', fg='#ffffff',
             insertbackground='#ffffff', relief='flat', borderwidth=2, state='disabled',
             wrap='none'
         )
@@ -186,6 +222,8 @@ class CommandModifierApp:
         self.terminal_text.tag_configure("coord", foreground="#ba42ff")
         self.terminal_text.tag_configure("modified_coord", foreground="#00ff00")
         self.terminal_text.tag_configure("normal", foreground="#ffffff")
+        self.terminal_text.tag_configure("block_changed", foreground="#00ff00")  # Green for changed block
+        self.terminal_text.tag_configure("block_unchanged", foreground="#ffffff")  # White for unchanged block
 
         # Instructions
         tk.Label(
@@ -199,7 +237,7 @@ class CommandModifierApp:
         self.terminal_text.configure(state='disabled')
         self.terminal_text.see(tk.END)
 
-    def highlight_command(self, command, is_output=False, original_coords=None):
+    def highlight_command(self, command, is_output=False, original_coords=None, original_block=None):
         # Patterns for highlighting
         command_pattern = r'^(summon|setblock|kill)\b'
         summon_object_pattern = r'(?<=summon\s)\w+\b'
@@ -207,6 +245,7 @@ class CommandModifierApp:
         coord_pattern = r'-?\d+\b'
         args_pattern = r'\{.*?\}\}?'
         beam_target_pattern = r'BeamTarget:\{.*?X:(-?\d+).*?Y:(-?\d+).*?Z:(-?\d+).*?\}'
+        block_pattern = r'(?:setblock\s+-?\d+\s+-?\d+\s+-?\d+\s+)(minecraft:\w+|\w+)'
 
         # Compile patterns
         command_re = re.compile(command_pattern)
@@ -215,12 +254,18 @@ class CommandModifierApp:
         coord_re = re.compile(coord_pattern)
         args_re = re.compile(args_pattern)
         beam_target_re = re.compile(beam_target_pattern)
+        block_re = re.compile(block_pattern)
 
-        # Extract coordinates for comparison
+        # Extract coordinates and block for comparison
         modified_coords = []
+        modified_block = None
         if is_output and original_coords:
             modified_coords = [int(x) for x in re.findall(coord_pattern, command) if x.lstrip('-').isdigit()]
             original_coords = original_coords[:len(modified_coords)]  # Ensure same length
+        if is_output and original_block:
+            block_match = block_re.search(command)
+            if block_match:
+                modified_block = block_match.group(1)
 
         pos = 0
         self.terminal_text.configure(state='normal')
@@ -248,7 +293,11 @@ class CommandModifierApp:
                 if pos < start:
                     self.terminal_text.insert(tk.END, command[pos:start], "normal")
                     pos = start
-                self.terminal_text.insert(tk.END, command[start:end], "object")
+                block_text = command[start:end]
+                if is_output and original_block and modified_block:
+                    self.terminal_text.insert(tk.END, block_text, "block_changed" if block_text != original_block else "block_unchanged")
+                else:
+                    self.terminal_text.insert(tk.END, block_text, "object")
                 pos = end
                 continue
 
@@ -294,51 +343,24 @@ class CommandModifierApp:
                         # Output text before BeamTarget
                         self.terminal_text.insert(tk.END, arg_text[current_pos:beam_start], "normal")
                         current_pos = beam_start
-                        # Handle BeamTarget coordinates
+                        # Handle BeamTarget coordinates on a new line
+                        self.terminal_text.insert(tk.END, "{X:", "normal")
                         x_coord = int(beam_match.group(1))
-                        y_coord = int(beam_match.group(2))
-                        z_coord = int(beam_match.group(3))
-                        self.terminal_text.insert(tk.END, "BeamTarget:{", "normal")
-                        if is_output and original_coords and modified_coords:
-                            try:
-                                x_idx = modified_coords.index(x_coord)
-                                if x_idx < len(original_coords) and x_coord != original_coords[x_idx]:
-                                    self.terminal_text.insert(tk.END, "X:", "normal")
-                                    self.terminal_text.insert(tk.END, str(x_coord), "modified_coord")
-                                else:
-                                    self.terminal_text.insert(tk.END, "X:", "normal")
-                                    self.terminal_text.insert(tk.END, str(x_coord), "coord")
-                            except ValueError:
-                                self.terminal_text.insert(tk.END, "X:", "normal")
-                                self.terminal_text.insert(tk.END, str(x_coord), "coord")
-                            try:
-                                y_idx = modified_coords.index(y_coord)
-                                if y_idx < len(original_coords) and y_coord != original_coords[y_idx]:
-                                    self.terminal_text.insert(tk.END, ",Y:", "normal")
-                                    self.terminal_text.insert(tk.END, str(y_coord), "modified_coord")
-                                else:
-                                    self.terminal_text.insert(tk.END, ",Y:", "normal")
-                                    self.terminal_text.insert(tk.END, str(y_coord), "coord")
-                            except ValueError:
-                                self.terminal_text.insert(tk.END, ",Y:", "normal")
-                                self.terminal_text.insert(tk.END, str(y_coord), "coord")
-                            try:
-                                z_idx = modified_coords.index(z_coord)
-                                if z_idx < len(original_coords) and z_coord != original_coords[z_idx]:
-                                    self.terminal_text.insert(tk.END, ",Z:", "normal")
-                                    self.terminal_text.insert(tk.END, str(z_coord), "modified_coord")
-                                else:
-                                    self.terminal_text.insert(tk.END, ",Z:", "normal")
-                                    self.terminal_text.insert(tk.END, str(z_coord), "coord")
-                            except ValueError:
-                                self.terminal_text.insert(tk.END, ",Z:", "normal")
-                                self.terminal_text.insert(tk.END, str(z_coord), "coord")
+                        if is_output and original_coords and len(original_coords) > 3:  # BeamTarget coords start at index 3
+                            self.terminal_text.insert(tk.END, str(x_coord), "modified_coord" if x_coord != original_coords[3] else "coord")
                         else:
-                            self.terminal_text.insert(tk.END, "X:", "normal")
                             self.terminal_text.insert(tk.END, str(x_coord), "coord")
-                            self.terminal_text.insert(tk.END, ",Y:", "normal")
+                        self.terminal_text.insert(tk.END, ",Y:", "normal")
+                        y_coord = int(beam_match.group(2))
+                        if is_output and original_coords and len(original_coords) > 4:
+                            self.terminal_text.insert(tk.END, str(y_coord), "modified_coord" if y_coord != original_coords[4] else "coord")
+                        else:
                             self.terminal_text.insert(tk.END, str(y_coord), "coord")
-                            self.terminal_text.insert(tk.END, ",Z:", "normal")
+                        self.terminal_text.insert(tk.END, ",Z:", "normal")
+                        z_coord = int(beam_match.group(3))
+                        if is_output and original_coords and len(original_coords) > 5:
+                            self.terminal_text.insert(tk.END, str(z_coord), "modified_coord" if z_coord != original_coords[5] else "coord")
+                        else:
                             self.terminal_text.insert(tk.END, str(z_coord), "coord")
                         self.terminal_text.insert(tk.END, "}", "normal")
                         current_pos = beam_end
@@ -353,48 +375,13 @@ class CommandModifierApp:
                                 coords = re.findall(r'-?\d+', "139184-89")
                                 if len(coords) >= 3:
                                     x_coord, y_coord, z_coord = map(int, coords[:3])
-                                    self.terminal_text.insert(tk.END, "BeamTarget:{", "normal")
-                                    if is_output and original_coords and modified_coords:
-                                        try:
-                                            x_idx = modified_coords.index(x_coord)
-                                            if x_idx < len(original_coords) and x_coord != original_coords[x_idx]:
-                                                self.terminal_text.insert(tk.END, "X:", "normal")
-                                                self.terminal_text.insert(tk.END, str(x_coord), "modified_coord")
-                                            else:
-                                                self.terminal_text.insert(tk.END, "X:", "normal")
-                                                self.terminal_text.insert(tk.END, str(x_coord), "coord")
-                                        except ValueError:
-                                            self.terminal_text.insert(tk.END, "X:", "normal")
-                                            self.terminal_text.insert(tk.END, str(x_coord), "coord")
-                                        try:
-                                            y_idx = modified_coords.index(y_coord)
-                                            if y_idx < len(original_coords) and y_coord != original_coords[y_idx]:
-                                                self.terminal_text.insert(tk.END, ",Y:", "normal")
-                                                self.terminal_text.insert(tk.END, str(y_coord), "modified_coord")
-                                            else:
-                                                self.terminal_text.insert(tk.END, ",Y:", "normal")
-                                                self.terminal_text.insert(tk.END, str(y_coord), "coord")
-                                        except ValueError:
-                                            self.terminal_text.insert(tk.END, ",Y:", "normal")
-                                            self.terminal_text.insert(tk.END, str(y_coord), "coord")
-                                        try:
-                                            z_idx = modified_coords.index(z_coord)
-                                            if z_idx < len(original_coords) and z_coord != original_coords[z_idx]:
-                                                self.terminal_text.insert(tk.END, ",Z:", "normal")
-                                                self.terminal_text.insert(tk.END, str(z_coord), "modified_coord")
-                                            else:
-                                                self.terminal_text.insert(tk.END, ",Z:", "normal")
-                                                self.terminal_text.insert(tk.END, str(z_coord), "coord")
-                                        except ValueError:
-                                            self.terminal_text.insert(tk.END, ",Z:", "normal")
-                                            self.terminal_text.insert(tk.END, str(z_coord), "coord")
-                                    else:
-                                        self.terminal_text.insert(tk.END, "X:", "normal")
-                                        self.terminal_text.insert(tk.END, str(x_coord), "coord")
-                                        self.terminal_text.insert(tk.END, ",Y:", "normal")
-                                        self.terminal_text.insert(tk.END, str(y_coord), "coord")
-                                        self.terminal_text.insert(tk.END, ",Z:", "normal")
-                                        self.terminal_text.insert(tk.END, str(z_coord), "coord")
+                                    self.terminal_text.insert(tk.END, "\n", "normal")
+                                    self.terminal_text.insert(tk.END, "{X:", "normal")
+                                    self.terminal_text.insert(tk.END, str(x_coord), "coord")
+                                    self.terminal_text.insert(tk.END, ",Y:", "normal")
+                                    self.terminal_text.insert(tk.END, str(y_coord), "coord")
+                                    self.terminal_text.insert(tk.END, ",Z:", "normal")
+                                    self.terminal_text.insert(tk.END, str(z_coord), "coord")
                                     self.terminal_text.insert(tk.END, "}", "normal")
                                     current_pos = coord_end + len(coords[2])
                                 else:
@@ -463,8 +450,12 @@ class CommandModifierApp:
         else:
             pos_offsets, target_offsets = self.get_offsets()
 
-        # Extract original coordinates for highlighting
+        # Extract original coordinates and block for highlighting
         original_coords = [int(x) for x in re.findall(r'-?\d+\b', command) if x.lstrip('-').isdigit()]
+        original_block = None
+        block_match = re.search(r'(?:setblock\s+-?\d+\s+-?\d+\s+-?\d+\s+)(minecraft:\w+|\w+)', command)
+        if block_match:
+            original_block = block_match.group(1)
 
         # Summon command (end_crystal with BeamTarget)
         summon_pattern = re.compile(r'(summon end_crystal\s+)(-?\d+)(\s+)(-?\d+)(\s+)(-?\d+)(.*?(?:BeamTarget:\{|\],\{).*?X:)(-?\d+)(.*?Y:)(-?\d+)(.*?Z:)(-?\d+)(.*?\}\})')
@@ -479,9 +470,9 @@ class CommandModifierApp:
             z2 = target_values[2] if use_set else int(summon_match.group(12)) + target_offsets[2]
             result = f"{summon_match.group(1)}{x1}{summon_match.group(3)}{y1}{summon_match.group(5)}{z1}{summon_match.group(7)}{x2}{summon_match.group(9)}{y2}{summon_match.group(11)}{z2}{summon_match.group(13)}"
             logging.debug(f"Summon command modified: {result}")
-            return result, original_coords
+            return result, original_coords, None
 
-        # Handle malformed input (e.g., 139184-89) for summon
+        # Handle malformed input (e.g., extra brackets) for summon
         coords_pattern = r'-?\d+(?:\s*-?\d+){2}'
         coords_match = re.search(coords_pattern, command)
         if coords_match and "summon" in command and not summon_match:
@@ -490,10 +481,16 @@ class CommandModifierApp:
             if len(coords) >= 3:
                 x1, y1, z1 = map(int, coords[:3])
                 x2, y2, z2 = target_values if use_set else (x1 + target_offsets[0], y1 + target_offsets[1], z1 + target_offsets[2])
+                # Try to extract BeamTarget from the rest of the command
+                beam_target_match = re.search(r'BeamTarget:\{.*?X:(-?\d+).*?Y:(-?\d+).*?Z:(-?\d+).*?\}', command)
+                if beam_target_match:
+                    x2 = target_values[0] if use_set else int(beam_target_match.group(1)) + target_offsets[0]
+                    y2 = target_values[1] if use_set else int(beam_target_match.group(2)) + target_offsets[1]
+                    z2 = target_values[2] if use_set else int(beam_target_match.group(3)) + target_offsets[2]
                 result = f"summon end_crystal {x1} {y1} {z1} {{ShowBottom:0b,Invulnerable:1b,Tags:[\"laser\"],BeamTarget:{{X:{x2},Y:{y2},Z:{z2}}}}}"
-                original_coords = [x1, y1, z1]  # Assume initial coords for highlighting
+                original_coords = [x1, y1, z1] + ([int(beam_target_match.group(1)), int(beam_target_match.group(2)), int(beam_target_match.group(3))] if beam_target_match else [])
                 logging.debug(f"Reconstructed summon command: {result}")
-                return result, original_coords
+                return result, original_coords, None
 
         # Setblock command
         setblock_pattern = re.compile(r'(setblock\s+)(-?\d+)(\s+)(-?\d+)(\s+)(-?\d+)(\s+(minecraft:\w+|\w+))')
@@ -503,9 +500,11 @@ class CommandModifierApp:
             x = pos_values[0] if use_set else int(setblock_match.group(2)) + pos_offsets[0]
             y = pos_values[1] if use_set else int(setblock_match.group(4)) + pos_offsets[1]
             z = pos_values[2] if use_set else int(setblock_match.group(6)) + pos_offsets[2]
-            result = f"{setblock_match.group(1)}{x}{setblock_match.group(3)}{y}{setblock_match.group(5)}{z}{setblock_match.group(7)}"
+            original_block_text = setblock_match.group(7)
+            new_block_text = self.block_text.get().strip() if "Change Block" in self.notebook.tab(self.notebook.select(), "text") else original_block_text
+            result = f"{setblock_match.group(1)}{x}{setblock_match.group(3)}{y}{setblock_match.group(5)}{z}{new_block_text}"
             logging.debug(f"Setblock command modified: {result}")
-            return result, original_coords
+            return result, original_coords, original_block_text
 
         # Kill command
         kill_pattern = re.compile(r'(kill @e\[[^]]*x=)(-?\d+)([^,]*,\s*y=)(-?\d+)([^,]*,\s*z=)(-?\d+)([^]]*\])')
@@ -517,10 +516,10 @@ class CommandModifierApp:
             z = pos_values[2] if use_set else int(kill_match.group(6)) + pos_offsets[2]
             result = f"{kill_match.group(1)}{x}{kill_match.group(3)}{y}{kill_match.group(5)}{z}{kill_match.group(7)}"
             logging.debug(f"Kill command modified: {result}")
-            return result, original_coords
+            return result, original_coords, None
 
-        logging.debug("No coordinate modification applied")
-        return command, original_coords
+        logging.debug("No modification applied")
+        return command, original_coords, None
 
     def process_command(self, command):
         logging.debug("Processing command")
@@ -534,18 +533,25 @@ class CommandModifierApp:
             current_tab = self.notebook.tab(self.notebook.select(), "text")
             use_set = current_tab == "Set Coordinates"
             if current_tab == "Change Block":
-                # Pattern to match setblock with coordinates 40 109 38
-                setblock_pattern = re.compile(r'(setblock\s+40\s+109\s+38\s+)(minecraft:\w+|\w+)')
+                setblock_pattern = re.compile(r'(setblock\s+)(-?\d+)(\s+)(-?\d+)(\s+)(-?\d+)(\s+(minecraft:\w+|\w+))')
                 setblock_match = setblock_pattern.search(command)
                 if setblock_match:
+                    x = int(setblock_match.group(2))
+                    y = int(setblock_match.group(4))
+                    z = int(setblock_match.group(6))
+                    original_block = setblock_match.group(7)
                     new_block_text = self.block_text.get().strip()
-                    result = f"{setblock_match.group(1)}{new_block_text}"
-                    original_coords = [40, 109, 38]  # Fixed coordinates for highlighting
+                    result = f"setblock {x} {y} {z} {new_block_text}"
+                    original_coords = [x, y, z]
                 else:
-                    result = command
-                    original_coords = []
+                    self.print_to_text("", "normal")  # Blank line before error
+                    self.print_to_text("Input Command:", "normal")
+                    self.highlight_command(command, is_output=False)
+                    self.print_to_text("Error: This command is not a setblock command.", "normal")
+                    self.print_to_text("", "normal")  # Blank line after error
+                    return
             else:
-                modified_command, original_coords = self.modify_coordinates(command, use_set)
+                modified_command, original_coords, original_block = self.modify_coordinates(command, use_set)
                 result = modified_command
 
             logging.debug(f"Modified command: {result}")
@@ -554,7 +560,7 @@ class CommandModifierApp:
             self.print_to_text("Input Command:", "normal")
             self.highlight_command(command, is_output=False)
             self.print_to_text("\nOutput Command:", "normal")  # New line before output
-            self.highlight_command(result, is_output=True, original_coords=original_coords)
+            self.highlight_command(result, is_output=True, original_coords=original_coords, original_block=original_block)
             self.print_to_text("\nUse Ctrl+V to paste in Minecraft.", "normal")  # New line before paste instruction
             if warning:
                 self.print_to_text(warning, "normal")
@@ -582,10 +588,77 @@ class CommandModifierApp:
             self.print_to_text("Clipboard is empty or invalid. Copy a command before pressing F12.", "normal")
             self.print_to_text("", "normal")  # Blank line after empty clipboard
 
+    def toggle_always_on_top(self):
+        self.root.attributes('-topmost', self.always_on_top.get())
+        logging.info(f"Always on top set to {self.always_on_top.get()}")
+
+    def schedule_tray_setup(self):
+        # Delay tray setup to avoid race conditions
+        self.root.after(100, self.setup_tray)
+
+    def setup_tray(self):
+        if not self.show_in_tray.get():
+            return
+
+        try:
+            # Use a custom icon (place icon.ico in the project directory)
+            icon_path = os.path.join(os.path.dirname(__file__), "icon.ico")
+            if os.path.exists(icon_path):
+                image = Image.open(icon_path)
+            else:
+                # Fallback to a simple 16x16 image if icon not found
+                image = Image.new('RGB', (16, 16), color=(0, 128, 255))  # Blue square
+                logging.warning(f"Icon file 'icon.ico' not found at {icon_path}. Using fallback image.")
+
+            self.tray = pystray.Icon("Minecraft Command Modifier", image, "Minecraft Command Modifier", Menu(
+                MenuItem("Open", self.show_window),
+                MenuItem("Settings", self.show_settings),
+                MenuItem("Exit", self.exit_app)
+            ))
+
+            def run_tray():
+                self.tray.run()
+
+            self.tray_thread = threading.Thread(target=run_tray, daemon=True)
+            self.tray_thread.start()
+            logging.info("Tray icon initialized successfully")
+        except Exception as e:
+            logging.error(f"Failed to initialize tray icon: {str(e)}")
+            self.show_in_tray.set(False)  # Disable tray if setup fails
+
+    def update_tray(self):
+        if self.tray:
+            self.tray.stop()
+            self.tray = None
+            self.tray_thread = None
+        if self.show_in_tray.get():
+            self.setup_tray()
+        logging.info(f"Show in tray set to {self.show_in_tray.get()}")
+
+    def on_closing(self):
+        if self.show_in_tray.get() and self.tray:
+            self.root.withdraw()  # Minimize to tray if tray is enabled
+        else:
+            self.root.destroy()  # Close the program if tray is disabled
+            if self.tray:
+                self.tray.stop()
+
+    def show_window(self):
+        self.root.deiconify()
+
+    def show_settings(self):
+        self.root.deiconify()
+        self.notebook.select(self.settings_frame)
+
+    def exit_app(self):
+        self.root.destroy()
+        if self.tray:
+            self.tray.stop()
+        sys.exit(0)
+
 def main():
     root = tk.Tk()
     root.resizable(True, True)  # Allow resizing
-    root.attributes('-topmost', True)  # Keep window on top
     root.columnconfigure(0, weight=1)  # Allow terminal to scale
     app = CommandModifierApp(root)
     try:
@@ -598,6 +671,8 @@ def main():
         app.print_to_text("", "normal")  # Blank line after exit
     finally:
         logging.info("Application exiting")
+        if app.tray:
+            app.tray.stop()
 
 if __name__ == "__main__":
     main()
