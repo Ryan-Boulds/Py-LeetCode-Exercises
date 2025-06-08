@@ -674,5 +674,6 @@ def main():
         if app.tray:
             app.tray.stop()
 
+
 if __name__ == "__main__":
     main()
