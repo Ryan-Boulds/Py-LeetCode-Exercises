@@ -34,6 +34,10 @@ class CommandModifierApp:
         self.set_coord_frame = ttk.Frame(self.notebook)
         self.notebook.add(self.set_coord_frame, text="Set Coordinates")
 
+        # Change Block tab
+        self.change_block_frame = ttk.Frame(self.notebook)
+        self.notebook.add(self.change_block_frame, text="Change Block")
+
         # Initialize modifier variables for Command Modifier
         self.pos_x_offset = tk.StringVar(value="0")
         self.pos_y_offset = tk.StringVar(value="0")
@@ -49,6 +53,9 @@ class CommandModifierApp:
         self.target_x_set = tk.StringVar(value="0")
         self.target_y_set = tk.StringVar(value="0")
         self.target_z_set = tk.StringVar(value="0")
+
+        # Initialize change block variable
+        self.block_text = tk.StringVar(value="minecraft:lime_concrete")
 
         # Create GUI elements
         self.create_gui()
@@ -136,6 +143,19 @@ class CommandModifierApp:
                             [self.pos_x_set, self.pos_y_set, self.pos_z_set],
                             [self.target_x_set, self.target_y_set, self.target_z_set],
                             "Set")
+
+        # Create GUI for Change Block
+        tk.Label(
+            self.change_block_frame, text="Change Block Modifier", font=("Arial", 16, "bold"),
+            bg='#f0f0f0', fg='#333333'
+        ).grid(row=0, column=0, columnspan=2, pady=10, sticky="ew")
+        tk.Label(
+            self.change_block_frame, text="New Block Text:", font=("Arial", 12, "bold"),
+            bg='#f0f0f0', fg='#333333'
+        ).grid(row=1, column=0, pady=5, sticky="e", padx=10)
+        tk.Entry(
+            self.change_block_frame, textvariable=self.block_text, width=30, bg='#ffffff', font=("Arial", 10)
+        ).grid(row=1, column=1, pady=5, sticky="w", padx=10)
 
         # Terminal Output (outside notebook)
         tk.Label(
@@ -513,20 +533,34 @@ class CommandModifierApp:
             # Determine which tab is active
             current_tab = self.notebook.tab(self.notebook.select(), "text")
             use_set = current_tab == "Set Coordinates"
-            modified_command, original_coords = self.modify_coordinates(command, use_set)
-            logging.debug(f"Modified command: {modified_command}")
+            if current_tab == "Change Block":
+                # Pattern to match setblock with coordinates 40 109 38
+                setblock_pattern = re.compile(r'(setblock\s+40\s+109\s+38\s+)(minecraft:\w+|\w+)')
+                setblock_match = setblock_pattern.search(command)
+                if setblock_match:
+                    new_block_text = self.block_text.get().strip()
+                    result = f"{setblock_match.group(1)}{new_block_text}"
+                    original_coords = [40, 109, 38]  # Fixed coordinates for highlighting
+                else:
+                    result = command
+                    original_coords = []
+            else:
+                modified_command, original_coords = self.modify_coordinates(command, use_set)
+                result = modified_command
+
+            logging.debug(f"Modified command: {result}")
 
             self.print_to_text("", "normal")  # Blank line before block
             self.print_to_text("Input Command:", "normal")
             self.highlight_command(command, is_output=False)
             self.print_to_text("\nOutput Command:", "normal")  # New line before output
-            self.highlight_command(modified_command, is_output=True, original_coords=original_coords)
+            self.highlight_command(result, is_output=True, original_coords=original_coords)
             self.print_to_text("\nUse Ctrl+V to paste in Minecraft.", "normal")  # New line before paste instruction
             if warning:
                 self.print_to_text(warning, "normal")
             self.print_to_text("", "normal")  # Blank line after block
 
-            pyperclip.copy(modified_command)
+            pyperclip.copy(result)
             logging.debug("Clipboard updated with modified command")
 
         except Exception as e:

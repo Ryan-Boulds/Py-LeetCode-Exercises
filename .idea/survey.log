@@ -22356,3 +22356,105 @@
 2025-06-08 00:34:16,522 - DEBUG - Modified command: setblock 1 -4 1 minecraft:lime_concrete
 2025-06-08 00:34:16,605 - DEBUG - Clipboard updated with modified command
 2025-06-08 00:35:25,268 - INFO - Application exiting
+2025-06-08 01:38:24,145 - INFO - Application started (F12 clipboard mode with GUI)
+2025-06-08 01:39:59,826 - INFO - F12 pressed - capturing clipboard command
+2025-06-08 01:39:59,828 - DEBUG - Processing command
+2025-06-08 01:39:59,828 - DEBUG - Modifying coordinates for command: kill @e[type=end_crystal,tag=laser,distance=..2,x=24,y=119,z=37]
+2025-06-08 01:39:59,830 - DEBUG - Kill match groups: ('kill @e[type=end_crystal,tag=laser,distance=..2,x=', '24', ',y=', '119', ',z=', '37', ']')
+2025-06-08 01:39:59,830 - DEBUG - Kill command modified: kill @e[type=end_crystal,tag=laser,distance=..2,x=24,y=119,z=37]
+2025-06-08 01:39:59,830 - DEBUG - Modified command: kill @e[type=end_crystal,tag=laser,distance=..2,x=24,y=119,z=37]
+2025-06-08 01:39:59,923 - DEBUG - Clipboard updated with modified command
+2025-06-08 01:40:10,545 - INFO - F12 pressed - capturing clipboard command
+2025-06-08 01:40:10,546 - DEBUG - Processing command
+2025-06-08 01:40:10,546 - DEBUG - Modifying coordinates for command: kill @e[type=end_crystal,tag=laser,distance=..2,x=24,y=119,z=37]
+2025-06-08 01:40:10,546 - DEBUG - Kill match groups: ('kill @e[type=end_crystal,tag=laser,distance=..2,x=', '24', ',y=', '119', ',z=', '37', ']')
+2025-06-08 01:40:10,546 - DEBUG - Kill command modified: kill @e[type=end_crystal,tag=laser,distance=..2,x=25,y=121,z=36]
+2025-06-08 01:40:10,546 - DEBUG - Modified command: kill @e[type=end_crystal,tag=laser,distance=..2,x=25,y=121,z=36]
+2025-06-08 01:40:10,662 - DEBUG - Clipboard updated with modified command
+2025-06-08 01:40:18,648 - INFO - F12 pressed - capturing clipboard command
+2025-06-08 01:40:18,649 - DEBUG - Processing command
+2025-06-08 01:40:18,649 - DEBUG - Modifying coordinates for command: summon end_crystal 24 119 37 {ShowBottom:0b,Invulnerable:1b,Tags:["laser"],BeamTarget:{X:138,Y:225,Z:-86}}
+2025-06-08 01:40:18,649 - DEBUG - Summon match groups: ('summon end_crystal ', '24', ' ', '119', ' ', '37', ' {ShowBottom:0b,Invulnerable:1b,Tags:["laser"],BeamTarget:{X:', '138', ',Y:', '225', ',Z:', '-86', '}}')
+2025-06-08 01:40:18,649 - DEBUG - Summon command modified: summon end_crystal 25 121 36 {ShowBottom:0b,Invulnerable:1b,Tags:["laser"],BeamTarget:{X:139,Y:226,Z:-87}}
+2025-06-08 01:40:18,649 - DEBUG - Modified command: summon end_crystal 25 121 36 {ShowBottom:0b,Invulnerable:1b,Tags:["laser"],BeamTarget:{X:139,Y:226,Z:-87}}
+2025-06-08 01:40:18,732 - DEBUG - Clipboard updated with modified command
+2025-06-08 01:40:42,606 - INFO - F12 pressed - capturing clipboard command
+2025-06-08 01:40:42,607 - DEBUG - Processing command
+2025-06-08 01:40:42,608 - DEBUG - Modifying coordinates for command: summon end_crystal 25 121 36 {ShowBottom:0b,Invulnerable:1b,Tags:["laser"],BeamTarget:{X:139,Y:226,Z:-87}}
+2025-06-08 01:40:42,608 - DEBUG - Summon match groups: ('summon end_crystal ', '25', ' ', '121', ' ', '36', ' {ShowBottom:0b,Invulnerable:1b,Tags:["laser"],BeamTarget:{X:', '139', ',Y:', '226', ',Z:', '-87', '}}')
+2025-06-08 01:40:42,608 - DEBUG - Summon command modified: summon end_crystal 1 4 -1 {ShowBottom:0b,Invulnerable:1b,Tags:["laser"],BeamTarget:{X:-1,Y:-79,Z:2}}
+2025-06-08 01:40:42,608 - DEBUG - Modified command: summon end_crystal 1 4 -1 {ShowBottom:0b,Invulnerable:1b,Tags:["laser"],BeamTarget:{X:-1,Y:-79,Z:2}}
+2025-06-08 01:40:42,707 - DEBUG - Clipboard updated with modified command
+2025-06-08 01:40:48,637 - INFO - Application exiting
+2025-06-08 01:46:28,809 - INFO - Application started (F12 clipboard mode with GUI)
+2025-06-08 01:46:56,959 - INFO - F12 pressed - capturing clipboard command
+2025-06-08 01:46:56,961 - DEBUG - Processing command
+2025-06-08 01:46:56,962 - DEBUG - Modified command: setblock 40 109 38 minecraft:red_concrete
+2025-06-08 01:46:57,051 - DEBUG - Clipboard updated with modified command
+2025-06-08 01:47:07,022 - INFO - F12 pressed - capturing clipboard command
+2025-06-08 01:47:07,023 - DEBUG - Processing command
+2025-06-08 01:47:07,023 - DEBUG - Modified command: setblock 40 109 38 test
+2025-06-08 01:47:07,103 - DEBUG - Clipboard updated with modified command
+2025-06-08 01:47:27,128 - INFO - F12 pressed - capturing clipboard command
+2025-06-08 01:47:27,128 - DEBUG - Processing command
+2025-06-08 01:47:27,130 - DEBUG - Modified command: setblock 40 109 38 minecraft:red_concrete
+2025-06-08 01:47:27,221 - DEBUG - Clipboard updated with modified command
+2025-06-08 01:47:40,135 - INFO - F12 pressed - capturing clipboard command
+2025-06-08 01:47:40,136 - DEBUG - Processing command
+2025-06-08 01:47:40,136 - DEBUG - Modifying coordinates for command: setblock 40 109 38 minecraft:red_concrete
+2025-06-08 01:47:40,138 - DEBUG - Setblock match groups: ('setblock ', '40', ' ', '109', ' ', '38', ' minecraft:red_concrete', 'minecraft:red_concrete')
+2025-06-08 01:47:40,138 - DEBUG - Setblock command modified: setblock 42 107 40 minecraft:red_concrete
+2025-06-08 01:47:40,138 - DEBUG - Modified command: setblock 42 107 40 minecraft:red_concrete
+2025-06-08 01:47:40,221 - DEBUG - Clipboard updated with modified command
+2025-06-08 01:47:44,709 - INFO - F12 pressed - capturing clipboard command
+2025-06-08 01:47:44,710 - DEBUG - Processing command
+2025-06-08 01:47:44,710 - DEBUG - Modifying coordinates for command: setblock 42 107 40 minecraft:red_concrete
+2025-06-08 01:47:44,710 - DEBUG - Setblock match groups: ('setblock ', '42', ' ', '107', ' ', '40', ' minecraft:red_concrete', 'minecraft:red_concrete')
+2025-06-08 01:47:44,710 - DEBUG - Setblock command modified: setblock 0 0 0 minecraft:red_concrete
+2025-06-08 01:47:44,710 - DEBUG - Modified command: setblock 0 0 0 minecraft:red_concrete
+2025-06-08 01:47:44,792 - DEBUG - Clipboard updated with modified command
+2025-06-08 01:47:55,563 - INFO - F12 pressed - capturing clipboard command
+2025-06-08 01:47:55,564 - DEBUG - Processing command
+2025-06-08 01:47:55,565 - DEBUG - Modifying coordinates for command: kill @e[type=end_crystal,tag=laser,distance=..2,x=24,y=119,z=37]
+2025-06-08 01:47:55,566 - DEBUG - Kill match groups: ('kill @e[type=end_crystal,tag=laser,distance=..2,x=', '24', ',y=', '119', ',z=', '37', ']')
+2025-06-08 01:47:55,566 - DEBUG - Kill command modified: kill @e[type=end_crystal,tag=laser,distance=..2,x=0,y=0,z=0]
+2025-06-08 01:47:55,566 - DEBUG - Modified command: kill @e[type=end_crystal,tag=laser,distance=..2,x=0,y=0,z=0]
+2025-06-08 01:47:55,671 - DEBUG - Clipboard updated with modified command
+2025-06-08 01:48:00,598 - INFO - F12 pressed - capturing clipboard command
+2025-06-08 01:48:00,599 - DEBUG - Processing command
+2025-06-08 01:48:00,600 - DEBUG - Modifying coordinates for command: kill @e[type=end_crystal,tag=laser,distance=..2,x=24,y=119,z=37]
+2025-06-08 01:48:00,600 - DEBUG - Kill match groups: ('kill @e[type=end_crystal,tag=laser,distance=..2,x=', '24', ',y=', '119', ',z=', '37', ']')
+2025-06-08 01:48:00,600 - DEBUG - Kill command modified: kill @e[type=end_crystal,tag=laser,distance=..2,x=26,y=117,z=39]
+2025-06-08 01:48:00,600 - DEBUG - Modified command: kill @e[type=end_crystal,tag=laser,distance=..2,x=26,y=117,z=39]
+2025-06-08 01:48:00,729 - DEBUG - Clipboard updated with modified command
+2025-06-08 01:48:09,856 - INFO - F12 pressed - capturing clipboard command
+2025-06-08 01:48:09,857 - DEBUG - Processing command
+2025-06-08 01:48:09,857 - DEBUG - Modifying coordinates for command: kill @e[type=end_crystal,tag=laser,distance=..2,x=24,y=119,z=37]
+2025-06-08 01:48:09,857 - DEBUG - Kill match groups: ('kill @e[type=end_crystal,tag=laser,distance=..2,x=', '24', ',y=', '119', ',z=', '37', ']')
+2025-06-08 01:48:09,857 - DEBUG - Kill command modified: kill @e[type=end_crystal,tag=laser,distance=..2,x=0,y=0,z=0]
+2025-06-08 01:48:09,857 - DEBUG - Modified command: kill @e[type=end_crystal,tag=laser,distance=..2,x=0,y=0,z=0]
+2025-06-08 01:48:09,957 - DEBUG - Clipboard updated with modified command
+2025-06-08 01:48:13,993 - INFO - F12 pressed - capturing clipboard command
+2025-06-08 01:48:13,994 - DEBUG - Processing command
+2025-06-08 01:48:13,995 - DEBUG - Modifying coordinates for command: kill @e[type=end_crystal,tag=laser,distance=..2,x=0,y=0,z=0]
+2025-06-08 01:48:13,995 - DEBUG - Kill match groups: ('kill @e[type=end_crystal,tag=laser,distance=..2,x=', '0', ',y=', '0', ',z=', '0', ']')
+2025-06-08 01:48:13,995 - DEBUG - Kill command modified: kill @e[type=end_crystal,tag=laser,distance=..2,x=2,y=-2,z=2]
+2025-06-08 01:48:13,995 - DEBUG - Modified command: kill @e[type=end_crystal,tag=laser,distance=..2,x=2,y=-2,z=2]
+2025-06-08 01:48:14,092 - DEBUG - Clipboard updated with modified command
+2025-06-08 01:48:15,627 - INFO - F12 pressed - capturing clipboard command
+2025-06-08 01:48:15,628 - DEBUG - Processing command
+2025-06-08 01:48:15,628 - DEBUG - Modifying coordinates for command: kill @e[type=end_crystal,tag=laser,distance=..2,x=2,y=-2,z=2]
+2025-06-08 01:48:15,629 - DEBUG - Kill match groups: ('kill @e[type=end_crystal,tag=laser,distance=..2,x=', '2', ',y=', '-2', ',z=', '2', ']')
+2025-06-08 01:48:15,629 - DEBUG - Kill command modified: kill @e[type=end_crystal,tag=laser,distance=..2,x=4,y=-4,z=4]
+2025-06-08 01:48:15,629 - DEBUG - Modified command: kill @e[type=end_crystal,tag=laser,distance=..2,x=4,y=-4,z=4]
+2025-06-08 01:48:15,716 - DEBUG - Clipboard updated with modified command
+2025-06-08 01:48:27,637 - INFO - Application exiting
+2025-06-08 01:49:47,725 - INFO - Application started (F12 clipboard mode with GUI)
+2025-06-08 01:49:57,024 - INFO - F12 pressed - capturing clipboard command
+2025-06-08 01:49:57,026 - DEBUG - Processing command
+2025-06-08 01:49:57,026 - DEBUG - Modifying coordinates for command: summon end_crystal 24 119 37 {ShowBottom:0b,Invulnerable:1b,Tags:["laser"],BeamTarget:{X:138,Y:205,Z:-86}}
+2025-06-08 01:49:57,027 - DEBUG - Summon match groups: ('summon end_crystal ', '24', ' ', '119', ' ', '37', ' {ShowBottom:0b,Invulnerable:1b,Tags:["laser"],BeamTarget:{X:', '138', ',Y:', '205', ',Z:', '-86', '}}')
+2025-06-08 01:49:57,027 - DEBUG - Summon command modified: summon end_crystal 24 119 37 {ShowBottom:0b,Invulnerable:1b,Tags:["laser"],BeamTarget:{X:138,Y:205,Z:-86}}
+2025-06-08 01:49:57,027 - DEBUG - Modified command: summon end_crystal 24 119 37 {ShowBottom:0b,Invulnerable:1b,Tags:["laser"],BeamTarget:{X:138,Y:205,Z:-86}}
+2025-06-08 01:49:57,094 - DEBUG - Clipboard updated with modified command
+2025-06-08 01:52:27,269 - INFO - Application exiting
